@@ -1,0 +1,211 @@
+#wikirace-floating-helper {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 360px;
+    background: #0f172a;
+    border: 2px solid #3b82f6;
+    border-radius: 12px;
+    color: #ffffff;
+    font-family: Arial, sans-serif;
+    z-index: 9999999999;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.45);
+    padding: 0;
+    overflow: hidden;
+}
+
+.helper-header {
+    background: #1e293b;
+    padding: 10px 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #334155;
+    cursor: pointer;
+}
+
+.helper-header b {
+    font-size: 12px;
+    color: #60a5fa;
+    letter-spacing: 0.08em;
+}
+
+.helper-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+#helper-toggle-icon {
+    color: #cbd5e1;
+    font-size: 14px;
+}
+
+.helper-header button {
+    background: none;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    font-size: 22px;
+    line-height: 1;
+}
+
+.helper-header button:hover {
+    color: #ffffff;
+}
+
+.helper-body {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.helper-lang-box {
+    background: #111827;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 8px;
+}
+
+.helper-lang-box label {
+    display: block;
+    font-size: 11px;
+    color: #cbd5e1;
+    margin-bottom: 4px;
+}
+
+#helper-lang-select {
+    width: 100%;
+    background: #020617;
+    color: #ffffff;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 8px;
+    font-size: 12px;
+}
+
+#helper-lang-hint {
+    margin-top: 6px;
+    font-size: 11px;
+    color: #94a3b8;
+}
+
+#helper-info {
+    font-size: 11px;
+    color: #94a3b8;
+}
+
+#helper-path {
+    font-size: 13px;
+    font-weight: 700;
+    background: #020617;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #1e293b;
+    min-height: 48px;
+    overflow-y: auto;
+    max-height: 260px;
+}
+
+.path-step {
+    margin-top: 10px;
+    padding: 10px;
+    border-left: 3px solid #4ade80;
+    background: rgba(15, 23, 42, 0.65);
+    border-radius: 6px;
+}
+
+.path-step:first-child {
+    margin-top: 0;
+}
+
+.path-step-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.path-label-main {
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.35;
+}
+
+.path-link-line {
+    margin-top: 6px;
+    color: #cbd5e1;
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1.4;
+}
+
+.path-title-link {
+    color: #93c5fd;
+    text-decoration: underline;
+    font-size: 12px;
+    word-break: break-word;
+}
+
+.path-title-link:hover {
+    color: #bfdbfe;
+}
+
+.path-status {
+    flex-shrink: 0;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 6px;
+    border-radius: 999px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.status-ok {
+    background: rgba(34, 197, 94, 0.18);
+    color: #86efac;
+    border: 1px solid rgba(34, 197, 94, 0.35);
+}
+
+.helper-actions {
+    display: flex;
+    gap: 8px;
+}
+
+#helper-go-btn,
+#helper-stop-btn {
+    flex: 1;
+    border: none;
+    padding: 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 700;
+    transition: 0.2s ease;
+}
+
+#helper-go-btn {
+    background: #2563eb;
+    color: #ffffff;
+}
+
+#helper-go-btn:hover {
+    background: #1d4ed8;
+}
+
+#helper-stop-btn {
+    background: #334155;
+    color: #e2e8f0;
+}
+
+#helper-stop-btn:hover {
+    background: #475569;
+}
+
+.helper-loading,
+.helper-empty {
+    color: #cbd5e1;
+    font-size: 12px;
+    font-weight: 400;
+}

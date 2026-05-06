@@ -1,0 +1,37 @@
+{
+  "manifest_version": 3,
+  "name": "WikiRace Helper",
+  "version": "1.0",
+  "description": "Helper WikiRace local avec cache persistant, recherche en arrière-plan et validation stricte des liens.",
+  "permissions": [
+    "activeTab",
+    "tabs",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://*.wiki-race.com/*",
+    "https://*.wikipedia.org/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "WikiRace Helper"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.wiki-race.com/*"
+      ],
+      "js": [
+        "wikisearch.js",
+        "searchManager.js",
+        "content.js"
+      ],
+      "css": [
+        "style.css"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
+}
