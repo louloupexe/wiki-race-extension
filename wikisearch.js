@@ -152,7 +152,7 @@ class WikiPath {
       ? data.parse.text
       : (data.parse.text?.["*"] || Object.values(data.parse.text || {})[0] || "");
 
-    const pattern = /<a[^>]*href="(\/wiki\/[^"#:\?]+(?:#[^"]*)?)"[^>]*>(.*?)<\/a>/gi;
+    const pattern = /<a\b[^>]*href="(\/wiki\/[^"#:\?]+(?:#[^"]*)?)"[^>]*>(.*?)<\/a>/gi;
     const found = [];
     const seen = new Set();
     let match;
@@ -345,7 +345,7 @@ class WikiPath {
           if (link === goalTitle || visitedGoal.has(link)) {
             const candidatePath = this.reconstructPath(parentsStart, parentsGoal, link);
             const result = await this.finalizeFoundPath(startTitle, goalTitle, candidatePath);
-            if (result) return result;
+            if (result) return { ...result, cached: false };
             logCb?.(`REJET lien non confirmé dans le chemin : ${candidatePath.join(" -> ")}`);
           }
         }
@@ -376,7 +376,7 @@ class WikiPath {
           if (visitedStart.has(link)) {
             const candidatePath = this.reconstructPath(parentsStart, parentsGoal, link);
             const result = await this.finalizeFoundPath(startTitle, goalTitle, candidatePath);
-            if (result) return result;
+            if (result) return { ...result, cached: false };
             logCb?.(`REJET lien non confirmé dans le chemin : ${candidatePath.join(" -> ")}`);
           }
         }

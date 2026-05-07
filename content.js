@@ -3,269 +3,244 @@ let helperInjected = false;
 let unsubscribeManager = null;
 
 function getWords() {
-    const startIn = document.querySelector(".PlasmicLobby_start__UfTYb input");
-    const destIn = document.querySelector(".PlasmicLobby_destination__W5Hn0 input");
-    const targetDest = document.querySelector(".PlasmicWiki_slotTargetDestination__i4_cc");
+  const startIn = document.querySelector(".PlasmicLobby_start__UfTYb input");
+  const destIn = document.querySelector(".PlasmicLobby_destination__W5Hn0 input");
+  const targetDest = document.querySelector(".PlasmicWiki_slotTargetDestination__i4_cc");
 
-    let start = startIn?.value?.trim();
-    if (!start) {
-        const h1 = document.querySelector("#firstHeading") || document.querySelector(".firstHeading") || document.querySelector("h1");
-        if (h1) start = h1.innerText.split("[")[0].trim();
-    }
+  let start = startIn?.value?.trim();
+  if (!start) {
+    const h1 = document.querySelector("#firstHeading") || document.querySelector(".firstHeading") || document.querySelector("h1");
+    if (h1) start = h1.innerText.split("[")[0].trim();
+  }
 
-    const goal = destIn?.value?.trim() || targetDest?.innerText?.trim();
-    return { start, goal };
+  const goal = destIn?.value?.trim() || targetDest?.innerText?.trim();
+  return { start, goal };
 }
 
 function normalizeWikiTitle(title) {
-    if (!title) return "";
-    return title.replace(/_/g, " ").trim();
+  if (!title) return "";
+  return title.replace(/_/g, " ").trim();
 }
 
 function escapeHtml(value) {
-    return String(value ?? "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-}
-
-function detectWikiLanguage() {
-    const host = window.location.hostname || "";
-    const wikiMatch = host.match(/^([a-z-]+)\.wikipedia\.org$/i);
-    if (wikiMatch) return wikiMatch[1].toLowerCase();
-
-    const docLang = (document.documentElement.lang || "").trim().toLowerCase();
-    if (docLang) return docLang.split("-")[0];
-
-    const pageText = document.body?.innerText || "";
-    if (/wikipédia/i.test(pageText)) return "fr";
-    if (/wikipedia/i.test(pageText)) return "en";
-
-    return "fr";
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 function getSelectedLanguage() {
-    const select = document.getElementById("helper-lang-select");
-    if (!select) return "fr";
-    if (select.value === "auto") {
-        return detectWikiLanguage();
-    }
-    return select.value;
+  const select = document.getElementById("helper-lang-select");
+  if (!select) return "fr";
+  return (select.value || "fr").trim().toLowerCase();
 }
 
 function updateLanguageHint() {
-    const hint = document.getElementById("helper-lang-hint");
-    const select = document.getElementById("helper-lang-select");
-    if (!hint || !select) return;
-
-    const detected = detectWikiLanguage();
-    if (select.value === "auto") {
-        hint.innerText = `Auto détectée : ${detected}`;
-    } else {
-        hint.innerText = `Langue manuelle : ${select.value}`;
-    }
+  const hint = document.getElementById("helper-lang-hint");
+  const select = document.getElementById("helper-lang-select");
+  if (!hint || !select) return;
+  hint.innerText = `Langue sélectionnée : ${select.value}`;
 }
 
 function removeFloatingUI() {
-    const panel = document.getElementById("wikirace-floating-helper");
-    if (panel) panel.remove();
-    helperInjected = false;
+  const panel = document.getElementById("wikirace-floating-helper");
+  if (panel) panel.remove();
+  helperInjected = false;
 }
 
 function renderPathFromState(state) {
-    const pathDiv = document.getElementById("helper-path");
-    if (!pathDiv) return;
+  const pathDiv = document.getElementById("helper-path");
+  if (!pathDiv) return;
 
-    if (!Array.isArray(state.path) || state.path.length < 2) {
-        pathDiv.innerHTML = "<div class='helper-empty'>Aucun chemin trouvé.</div>";
-        return;
-    }
+  if (!Array.isArray(state.path) || state.path.length < 2) {
+    pathDiv.innerHTML = `<div class="helper-empty">Aucun chemin affiché.</div>`;
+    return;
+  }
 
-    if (!Array.isArray(state.labels) || state.labels.length === 0) {
-        pathDiv.innerHTML = "<div class='helper-empty'>Aucun lien confirmé disponible.</div>";
-        return;
-    }
+  const lang = state.lang || "fr";
+  const labels = Array.isArray(state.labels) ? state.labels : [];
+  const steps = [];
 
-    let htmlStr = "";
+  for (let index = 1; index < state.path.length; index++) {
+    const title = state.path[index];
+    const safeTitle = escapeHtml(title);
+    const pageUrl = `https://${lang}.wikipedia.org/wiki/${encodeURIComponent(title.replace(/ /g, "_"))}`;
 
-    for (let i = 0; i < state.labels.length; i++) {
-        const item = state.labels[i] || {};
-        const targetTitle = item.to || state.path[i + 1] || "?";
-        const label = item.label || targetTitle;
-        const href = item.href || `/wiki/${encodeURIComponent(normalizeWikiTitle(targetTitle).replace(/ /g, "_"))}`;
+    const labelInfo = labels[index - 1];
+    const label = labelInfo?.label ? escapeHtml(labelInfo.label) : "Lien confirmé";
+    const href = labelInfo?.href
+      ? `https://${lang}.wikipedia.org${labelInfo.href}`
+      : pageUrl;
 
-        htmlStr += `
+    steps.push(`
       <div class="path-step">
         <div class="path-step-top">
-          <span class="path-label-main">${escapeHtml(label)}</span>
-          <span class="path-status status-ok">confirmé</span>
-        </div>
-        <div class="path-link-line">
-          lien : <a class="path-title-link" href="https://${escapeHtml(state.lang || "fr")}.wikipedia.org${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">${escapeHtml(targetTitle)}</a>
+          <div class="path-step-content">
+            <a class="path-label-link" href="${href}" target="_blank" rel="noopener noreferrer">${label}</a>
+            <div class="path-target-line">
+              <span class="path-arrow">→</span>
+              <span class="path-title-exact">${safeTitle}</span>
+            </div>
+          </div>
+          <span class="path-status status-ok">ok</span>
         </div>
       </div>
-    `;
-    }
+    `);
+  }
 
-    pathDiv.innerHTML = htmlStr || "<div class='helper-empty'>Aucune étape confirmée disponible.</div>";
+  pathDiv.innerHTML = steps.join("");
 }
 
-function updateUI(state) {
-    const info = document.getElementById("helper-info");
-    const pathDiv = document.getElementById("helper-path");
-    if (!info || !pathDiv) return;
+function renderState(state) {
+  const info = document.getElementById("helper-info");
+  const goBtn = document.getElementById("helper-go-btn");
+  const stopBtn = document.getElementById("helper-stop-btn");
 
-    if (state.running) {
-        info.innerText = `Exploration (${state.lang})... ${state.total} pages | file départ ${state.frontStart} | file arrivée ${state.frontGoal}`;
-        if (!state.path.length) {
-            pathDiv.innerHTML = "<div class='helper-loading'>Recherche en arrière-plan...</div>";
-        }
-        return;
-    }
+  if (info) {
+    info.innerHTML = [
+      `Langue : <b>${escapeHtml(state.lang || "fr")}</b>`,
+      `Visités : <b>${state.total || 0}</b>`,
+      `Front départ : <b>${state.frontStart || 0}</b>`,
+      `Front arrivée : <b>${state.frontGoal || 0}</b>`,
+      state.cached ? `<b>Cache local utilisé</b>` : "",
+      state.allLinksConfirmed ? `<b>Liens confirmés</b>` : ""
+    ].filter(Boolean).join(" · ");
+  }
 
-    if (state.path.length > 0) {
-        info.innerText = state.cached
-            ? `Chemin trouvé (${state.lang}, cache local).`
-            : `Chemin trouvé (${state.lang}).`;
-        renderPathFromState(state);
-        sessionStorage.setItem("wikisavedpath", JSON.stringify({ path: state.path, labels: state.labels, lang: state.lang }));
-        return;
-    }
+  if (goBtn) goBtn.disabled = !!state.running;
+  if (stopBtn) stopBtn.disabled = !state.running;
 
-    if (state.logs.length > 0) {
-        info.innerText = state.logs[state.logs.length - 1];
-        pathDiv.innerHTML = "<div class='helper-empty'>Aucun résultat.</div>";
-    }
+  renderPathFromState(state);
 }
 
-function restoreSavedPath() {
-    const saved = sessionStorage.getItem("wikisavedpath");
-    if (!saved) return;
-
-    try {
-        const parsed = JSON.parse(saved);
-        renderPathFromState({
-            path: parsed.path || [],
-            labels: parsed.labels || [],
-            lang: parsed.lang || "fr"
-        });
-        const info = document.getElementById("helper-info");
-        if (info) info.innerText = "Dernier chemin restauré depuis la session.";
-    } catch {
-        sessionStorage.removeItem("wikisavedpath");
-    }
-}
-
-function ensureSubscription() {
-    if (unsubscribeManager) return;
-    unsubscribeManager = manager.subscribe((state) => {
-        if (document.getElementById("wikirace-floating-helper")) {
-            updateUI(state);
-        }
-    });
-}
-
-function injectFloatingUI() {
-    if (helperInjected || document.getElementById("wikirace-floating-helper")) return;
-    ensureSubscription();
-
-    const panel = document.createElement("div");
-    panel.id = "wikirace-floating-helper";
-    panel.innerHTML = `
-    <div class="helper-header" id="helper-toggle">
+function buildPanel() {
+  const panel = document.createElement("div");
+  panel.id = "wikirace-floating-helper";
+  panel.innerHTML = `
+    <div class="helper-header" id="helper-header">
       <b>WIKIRACE HELPER</b>
       <div class="helper-header-actions">
         <span id="helper-toggle-icon">▾</span>
-        <button id="helper-close" title="Fermer">×</button>
+        <button id="helper-close-btn" title="Fermer">×</button>
       </div>
     </div>
+
     <div class="helper-body" id="helper-body">
       <div class="helper-lang-box">
-        <label for="helper-lang-select">Langue :</label>
+        <label for="helper-lang-select">Langue Wikipédia</label>
         <select id="helper-lang-select">
-          <option value="auto">Auto</option>
-          <option value="fr">fr</option>
+          <option value="fr" selected>fr</option>
           <option value="en">en</option>
           <option value="es">es</option>
           <option value="de">de</option>
           <option value="it">it</option>
+          <option value="pt">pt</option>
         </select>
-        <div id="helper-lang-hint">Auto détectée : ${detectWikiLanguage()}</div>
+        <div id="helper-lang-hint">Langue sélectionnée : fr</div>
       </div>
-      <div id="helper-info">Prêt à scanner.</div>
-      <div id="helper-path">---</div>
+
+      <div id="helper-info">En attente...</div>
+
+      <div id="helper-path">
+        <div class="helper-empty">Aucun chemin affiché.</div>
+      </div>
+
       <div class="helper-actions">
-        <button id="helper-go-btn">CALCULER LE CHEMIN</button>
-        <button id="helper-stop-btn" class="secondary-btn">STOP</button>
+        <button id="helper-go-btn">Chercher</button>
+        <button id="helper-stop-btn" disabled>Stop</button>
       </div>
     </div>
   `;
 
-    document.body.appendChild(panel);
-    helperInjected = true;
-
-    const toggle = document.getElementById("helper-toggle");
-    const toggleIcon = document.getElementById("helper-toggle-icon");
-    const body = document.getElementById("helper-body");
-    const closeBtn = document.getElementById("helper-close");
-    const goBtn = document.getElementById("helper-go-btn");
-    const stopBtn = document.getElementById("helper-stop-btn");
-    const langSelect = document.getElementById("helper-lang-select");
-
-    langSelect.addEventListener("change", () => {
-        updateLanguageHint();
-    });
-
-    toggle.addEventListener("click", (e) => {
-        if (e.target.id === "helper-close") return;
-        const isHidden = body.style.display === "none";
-        body.style.display = isHidden ? "flex" : "none";
-        toggleIcon.innerText = isHidden ? "▾" : "▸";
-    });
-
-    closeBtn.addEventListener("click", () => {
-        removeFloatingUI();
-    });
-
-    stopBtn.addEventListener("click", () => {
-        manager.stop();
-    });
-
-    goBtn.addEventListener("click", async () => {
-        const { start, goal } = getWords();
-        const info = document.getElementById("helper-info");
-        const pathDiv = document.getElementById("helper-path");
-        const lang = getSelectedLanguage();
-
-        if (!goal) {
-            info.innerText = "Destination non trouvée.";
-            return;
-        }
-
-        if (!start) {
-            info.innerText = "Point de départ non trouvé.";
-            return;
-        }
-
-        manager.setLanguage(lang);
-        updateLanguageHint();
-
-        info.innerText = `Recherche (${lang}) : ${start} -> ${goal}`;
-        pathDiv.innerHTML = "<div class='helper-loading'>Algorithme en cours...</div>";
-        manager.start(start, goal);
-    });
-
-    updateLanguageHint();
-    updateUI(manager.getStatus());
-    restoreSavedPath();
+  return panel;
 }
 
-chrome.runtime.onMessage.addListener((msg) => {
-    if (msg?.type === "TOGGLE_HELPER") {
-        const panel = document.getElementById("wikirace-floating-helper");
-        if (panel) removeFloatingUI();
-        else injectFloatingUI();
+function attachPanelEvents(panel) {
+  const closeBtn = panel.querySelector("#helper-close-btn");
+  const header = panel.querySelector("#helper-header");
+  const body = panel.querySelector("#helper-body");
+  const toggleIcon = panel.querySelector("#helper-toggle-icon");
+  const goBtn = panel.querySelector("#helper-go-btn");
+  const stopBtn = panel.querySelector("#helper-stop-btn");
+  const langSelect = panel.querySelector("#helper-lang-select");
+
+  let collapsed = false;
+
+  closeBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    removeFloatingUI();
+  });
+
+  header.addEventListener("click", () => {
+    collapsed = !collapsed;
+    body.style.display = collapsed ? "none" : "flex";
+    toggleIcon.innerText = collapsed ? "▸" : "▾";
+  });
+
+  langSelect.addEventListener("change", () => {
+    const nextLang = getSelectedLanguage();
+    manager.setLanguage(nextLang);
+    updateLanguageHint();
+    renderState(manager.getStatus());
+  });
+
+  goBtn.addEventListener("click", async () => {
+    const { start, goal } = getWords();
+
+    if (!start || !goal) {
+      const pathDiv = document.getElementById("helper-path");
+      if (pathDiv) {
+        pathDiv.innerHTML = `<div class="helper-empty">Départ ou arrivée introuvable sur la page.</div>`;
+      }
+      return;
     }
+
+    const lang = getSelectedLanguage();
+    manager.setLanguage(lang);
+
+    try {
+      await manager.start(normalizeWikiTitle(start), normalizeWikiTitle(goal));
+    } catch (error) {
+      const state = manager.getStatus();
+      state.logs.push(`Erreur inattendue : ${error?.message || error}`);
+      renderState(state);
+    }
+  });
+
+  stopBtn.addEventListener("click", () => {
+    manager.stop();
+    renderState(manager.getStatus());
+  });
+}
+
+function injectFloatingUI() {
+  if (helperInjected) return;
+
+  removeFloatingUI();
+
+  const panel = buildPanel();
+  document.body.appendChild(panel);
+  attachPanelEvents(panel);
+
+  if (unsubscribeManager) unsubscribeManager();
+  unsubscribeManager = manager.subscribe((state) => {
+    renderState(state);
+  });
+
+  updateLanguageHint();
+  renderState(manager.getStatus());
+  helperInjected = true;
+}
+
+chrome.runtime.onMessage.addListener((message) => {
+  if (message?.type !== "TOGGLE_HELPER") return;
+
+  const existing = document.getElementById("wikirace-floating-helper");
+  if (existing) {
+    removeFloatingUI();
+  } else {
+    injectFloatingUI();
+  }
 });

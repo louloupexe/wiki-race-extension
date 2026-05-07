@@ -41,7 +41,7 @@ class SearchManager {
     for (const listener of this.listeners) {
       try {
         listener(this.state);
-      } catch (_) { }
+      } catch (_) {}
     }
   }
 
